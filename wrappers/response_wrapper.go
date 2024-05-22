@@ -6,21 +6,42 @@ import (
 )
 
 type ResponseWrapper struct {
-	StatusCode int
-	body       *bytes.Buffer
+	status int
 	http.ResponseWriter
 }
 
-func (w *ResponseWrapper) WriteHeader(code int) {
-	w.StatusCode = code
+func (w *ResponseWrapper) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(w.status)
 }
 
-func (w *ResponseWrapper) Write(body []byte) (int, error) {
+func (w *ResponseWrapper) Status() int {
+	return w.status
+}
+
+func NewResponseWrapper(w http.ResponseWriter) *ResponseWrapper {
+	return &ResponseWrapper{
+		status:         0,
+		ResponseWriter: w,
+	}
+}
+
+type BufferedResponseWrapper struct {
+	status int
+	body   *bytes.Buffer
+	http.ResponseWriter
+}
+
+func (w *BufferedResponseWrapper) WriteHeader(status int) {
+	w.status = status
+}
+
+func (w *BufferedResponseWrapper) Write(body []byte) (int, error) {
 	return w.body.Write(body)
 }
 
-func (w *ResponseWrapper) Close() error {
-	w.ResponseWriter.WriteHeader(w.StatusCode)
+func (w *BufferedResponseWrapper) Close() error {
+	w.ResponseWriter.WriteHeader(w.status)
 	_, err := w.ResponseWriter.Write(w.body.Bytes())
 	if err != nil {
 		return err
@@ -29,9 +50,13 @@ func (w *ResponseWrapper) Close() error {
 	return nil
 }
 
-func NewResponseWrapper(w http.ResponseWriter) *ResponseWrapper {
-	return &ResponseWrapper{
-		StatusCode:     0,
+func (w *BufferedResponseWrapper) Status() int {
+	return w.status
+}
+
+func NewBufferedResponseWrapper(w http.ResponseWriter) *BufferedResponseWrapper {
+	return &BufferedResponseWrapper{
+		status:         0,
 		body:           bytes.NewBuffer(make([]byte, 0, 4096)),
 		ResponseWriter: w,
 	}

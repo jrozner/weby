@@ -14,10 +14,6 @@ func WrapResponse(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		wrapper := wrappers.NewResponseWrapper(w)
 		next.ServeHTTP(wrapper, r)
-		err := wrapper.Close()
-		if err != nil {
-			// TODO: handle Close error
-		}
 	}
 
 	return http.HandlerFunc(fn)
@@ -48,44 +44,6 @@ func RemoveResponseHeader(header string) func(http.Handler) http.Handler {
 			} else {
 				next.ServeHTTP(wrapper, r)
 				wrapper.Header().Del(header)
-			}
-		}
-
-		return http.HandlerFunc(fn)
-	}
-}
-
-func AppendResponseBody(str string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			wrapper, ok := w.(*wrappers.ResponseWrapper)
-			if !ok {
-				next.ServeHTTP(w, r)
-			} else {
-				next.ServeHTTP(wrapper, r)
-				_, err := wrapper.Write([]byte(str))
-				if err != nil {
-					// TODO: handle Write error
-				}
-			}
-		}
-
-		return http.HandlerFunc(fn)
-	}
-}
-
-func PrependResponseBody(str string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			wrapper, ok := w.(*wrappers.ResponseWrapper)
-			if !ok {
-				next.ServeHTTP(w, r)
-			} else {
-				_, err := wrapper.Write([]byte(str))
-				if err != nil {
-					// TODO: handle Write error
-				}
-				next.ServeHTTP(wrapper, r)
 			}
 		}
 

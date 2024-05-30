@@ -9,7 +9,9 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/jrozner/weby"
 	"github.com/jrozner/weby/middleware"
@@ -18,7 +20,7 @@ import (
 func main() {
 	server := weby.NewServer()
 	server.Use(middleware.WrapResponse)
-	server.Use(middleware.Logger(log.Default()))
+	server.Use(middleware.Logger(slog.New(slog.NewTextHandler(os.Stdout, nil))))
 	server.HandleFunc("/", root)
 	
 	log.Fatal(http.ListenAndServe(":8080", server))

@@ -3,8 +3,8 @@ package template
 import (
 	"errors"
 	"html/template"
-	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -63,7 +63,7 @@ func GenerateTemplates(templatesPath string) (map[string]*template.Template, err
 }
 
 // Render finds the specified template in the map of templates, executes it, and writes it to the writer.
-func Render(w io.Writer, templates map[string]*template.Template, name string, data interface{}) error {
+func Render(w http.ResponseWriter, status int, templates map[string]*template.Template, name string, data interface{}) error {
 	t, ok := templates[name]
 	if !ok {
 		return ErrNoTemplate
@@ -71,5 +71,6 @@ func Render(w io.Writer, templates map[string]*template.Template, name string, d
 
 	name = path.Base(name)
 
+	w.WriteHeader(status)
 	return t.ExecuteTemplate(w, name, data)
 }

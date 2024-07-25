@@ -63,8 +63,8 @@ func GenerateTemplates(templatesPath string) (map[string]*template.Template, err
 }
 
 // Render finds the specified template in the map of templates, executes it, and writes it to the writer.
-func Render(w http.ResponseWriter, status int, templates map[string]*template.Template, name string, data interface{}) error {
-	t, ok := templates[name]
+func Render(w http.ResponseWriter, status int, templates map[string]*template.Template, ns, name string, data interface{}) error {
+	t, ok := templates[ns]
 	if !ok {
 		return ErrNoTemplate
 	}

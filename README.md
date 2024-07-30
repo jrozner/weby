@@ -18,12 +18,12 @@ import (
 )
 
 func main() {
-	server := weby.NewServer()
-	server.Use(middleware.WrapResponse)
-	server.Use(middleware.Logger(slog.New(slog.NewTextHandler(os.Stdout, nil))))
-	server.HandleFunc("/", root)
+	mux := weby.NewServeMux()
+	mux.Use(middleware.WrapResponse)
+	mux.Use(middleware.Logger(slog.New(slog.NewTextHandler(os.Stdout, nil))))
+	mux.HandleFunc("/", root)
 	
-	log.Fatal(http.ListenAndServe(":8080", server))
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
 func root(w http.ResponseWriter, r *http.Request) {

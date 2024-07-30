@@ -2,16 +2,16 @@ package weby
 
 import "net/http"
 
-type Server struct {
+type ServeMux struct {
 	middleware []func(http.Handler) http.Handler
 	*http.ServeMux
 }
 
-func (s *Server) Use(middleware func(http.Handler) http.Handler) {
+func (s *ServeMux) Use(middleware func(http.Handler) http.Handler) {
 	s.middleware = append(s.middleware, middleware)
 }
 
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var chain http.Handler = s.ServeMux
 	if len(s.middleware) > 0 {
 		for i := len(s.middleware); i > 0; i-- {
@@ -23,8 +23,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	chain.ServeHTTP(w, r)
 }
 
-func NewServer() *Server {
-	return &Server{
+func NewServeMux() *ServeMux {
+	return &ServeMux{
 		middleware: make([]func(http.Handler) http.Handler, 0),
 		ServeMux:   http.NewServeMux(),
 	}

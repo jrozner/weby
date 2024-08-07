@@ -20,6 +20,7 @@ func RequestID(l *slog.Logger) func(next http.Handler) http.Handler {
 
 			ctx := context.WithValue(r.Context(), RequestIDKey, requestID.String())
 			r.WithContext(ctx)
+			next.ServeHTTP(w, r)
 		}
 
 		return http.HandlerFunc(fn)

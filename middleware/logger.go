@@ -11,9 +11,10 @@ import (
 func Logger(l *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
+			logger := l
 			start := time.Now()
 			if id, ok := r.Context().Value(RequestIDKey).(string); ok {
-				l = l.With("request", id)
+				logger = l.With("id", id)
 			}
 
 			wrapper, ok := w.(*wrappers.ResponseWrapper)
@@ -23,7 +24,7 @@ func Logger(l *slog.Logger) func(next http.Handler) http.Handler {
 			} else {
 				next.ServeHTTP(wrapper, r)
 				end := time.Now()
-				l.Info("", "status", wrapper.Status(), "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", end.Sub(start))
+				logger.Info("", "status", wrapper.Status(), "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", end.Sub(start))
 			}
 		}
 

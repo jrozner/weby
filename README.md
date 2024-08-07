@@ -15,21 +15,24 @@ import (
 
 	"github.com/jrozner/weby"
 	"github.com/jrozner/weby/middleware"
+	"github.com/jrozner/weby/rlog"
 )
 
 func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	var handler slog.Handler = slog.NewTextHandler(os.Stdout, nil)
+	handler = rlog.RequestIDHandler{handler}
+	logger := slog.New(handler)
 	mux := weby.NewServeMux()
-	mux.Use(middleware.RequestID(logger))
+	mux.Use(middleware.RequestID)
 	mux.Use(middleware.WrapResponse)
 	mux.Use(middleware.Logger(logger))
 	mux.HandleFunc("/", root)
-	
+
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
 func root(w http.ResponseWriter, r *http.Request) {
-    w.WriteHeader(http.StatusOK)	
+	w.WriteHeader(http.StatusOK)
 }
 ```
 

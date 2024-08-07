@@ -18,9 +18,11 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	mux := weby.NewServeMux()
+	mux.Use(middleware.RequestID(logger))
 	mux.Use(middleware.WrapResponse)
-	mux.Use(middleware.Logger(slog.New(slog.NewTextHandler(os.Stdout, nil))))
+	mux.Use(middleware.Logger(logger))
 	mux.HandleFunc("/", root)
 	
 	log.Fatal(http.ListenAndServe(":8080", mux))

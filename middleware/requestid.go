@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jrozner/weby/contextvalue"
 )
 
-const RequestIDKey = "RequestID"
+const RequestIDKey contextvalue.Key = "RequestID"
 
 func RequestID(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {

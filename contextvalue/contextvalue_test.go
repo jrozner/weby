@@ -2,6 +2,7 @@ package contextvalue
 
 import (
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -10,7 +11,7 @@ var key Key = "hi"
 func TestNoValue(t *testing.T) {
 	ctx := context.Background()
 	_, err := Value[string](ctx, key)
-	if err != ErrNoValue {
+	if !errors.Is(err, ErrNoValue) {
 		t.Errorf("want ErrNoValue, got %v", err)
 	}
 }
@@ -20,7 +21,7 @@ func TestAssertFailed(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), key, value)
 	_, err := Value[int](ctx, "hi")
-	if err != ErrAssertFailed {
+	if !errors.Is(err, ErrAssertFailed) {
 		t.Errorf("want ErrAssertFailed, got %v", err)
 	}
 }

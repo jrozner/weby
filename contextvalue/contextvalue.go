@@ -25,12 +25,12 @@ func Value[T any](ctx context.Context, key Key) (T, error) {
 	)
 
 	if v = ctx.Value(key); v == nil {
-		return *new(T), ErrNoValue
+		return vAsserted, ErrNoValue
 	}
 
 	if vAsserted, ok = v.(T); ok {
 		return vAsserted, nil
 	}
 
-	return *new(T), ErrAssertFailed
+	return vAsserted, ErrAssertFailed
 }

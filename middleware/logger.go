@@ -20,7 +20,7 @@ func Logger(l *slog.Logger) func(next http.Handler) http.Handler {
 			} else {
 				next.ServeHTTP(wrapper, r)
 				end := time.Now()
-				l.InfoContext(r.Context(), "", "status", wrapper.Status(), "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", end.Sub(start))
+				l.InfoContext(r.Context(), "http request", "status", wrapper.Status(), "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", end.Sub(start))
 			}
 		}
 

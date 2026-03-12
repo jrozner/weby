@@ -19,7 +19,7 @@ var (
 // of T generically. Instead, we need to allocate it and then de-reference.
 func Value[T any](ctx context.Context, key Key) (T, error) {
 	var (
-		v         interface{}
+		v         any
 		vAsserted T
 		ok        bool
 	)

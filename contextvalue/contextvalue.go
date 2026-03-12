@@ -15,8 +15,7 @@ var (
 )
 
 // Value returns the asserted value from a context or an error if the key exists, and it can assert to the specified
-// type. The failure conditions unfortunately force an allocation of T because it's not possible to create a literal
-// of T generically. Instead, we need to allocate it and then de-reference.
+// type.
 func Value[T any](ctx context.Context, key Key) (T, error) {
 	var (
 		v         any
@@ -25,12 +24,12 @@ func Value[T any](ctx context.Context, key Key) (T, error) {
 	)
 
 	if v = ctx.Value(key); v == nil {
-		return *new(T), ErrNoValue
+		return vAsserted, ErrNoValue
 	}
 
 	if vAsserted, ok = v.(T); ok {
 		return vAsserted, nil
 	}
 
-	return *new(T), ErrAssertFailed
+	return vAsserted, ErrAssertFailed
 }

@@ -25,10 +25,16 @@ var (
 //
 // The base directory name does not matter, but it must not include an underscore as the first character. The base
 // layouts should occur within a directory called _layout in the root templates directory
-func GenerateTemplates(templatesPath string) (map[string]*template.Template, error) {
+//
+// Any optional funcs FuncMaps are registered on the base layout before parsing, so templates may reference them.
+func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[string]*template.Template, error) {
 	templates := make(map[string]*template.Template)
 
-	base := template.Must(template.ParseGlob(path.Join(templatesPath, "_layouts", "*.html")))
+	base := template.New("")
+	for _, f := range funcs {
+		base = base.Funcs(f)
+	}
+	base = template.Must(base.ParseGlob(path.Join(templatesPath, "_layouts", "*.html")))
 
 	err := fs.WalkDir(os.DirFS(templatesPath), ".", func(p string, d fs.DirEntry, err error) error {
 		if d.IsDir() {

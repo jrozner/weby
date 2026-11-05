@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ var (
 // templates/names/new.html
 //
 // The base directory name does not matter, but it must not include an underscore as the first character. The base
-// layouts should occur within a directory called _layout in the root templates directory
+// layouts should occur within a directory called _layouts in the root templates directory
 //
 // Any optional funcs FuncMaps are registered on the base layout before parsing, so templates may reference them.
 func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[string]*template.Template, error) {
@@ -34,7 +35,7 @@ func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[str
 	for _, f := range funcs {
 		base = base.Funcs(f)
 	}
-	base, err := base.ParseGlob(path.Join(templatesPath, "_layouts", "*.html"))
+	base, err := base.ParseGlob(filepath.Join(templatesPath, "_layouts", "*.html"))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[str
 			return err
 		}
 
-		t, err := cloned.ParseFiles(path.Join(templatesPath, p))
+		t, err := cloned.ParseFiles(filepath.Join(templatesPath, p))
 		if err != nil {
 			return err
 		}

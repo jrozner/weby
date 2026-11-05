@@ -67,6 +67,16 @@ func TestInformationalHeaderDoesNotSetFinalStatus(t *testing.T) {
 	}
 }
 
+func TestSwitchingProtocolsSetsFinalStatus(t *testing.T) {
+	w := NewResponseWrapper(&recordingResponseWriter{})
+	w.WriteHeader(http.StatusSwitchingProtocols)
+	w.WriteHeader(http.StatusInternalServerError)
+
+	if got := w.Status(); got != http.StatusSwitchingProtocols {
+		t.Errorf("Status() = %d, want %d", got, http.StatusSwitchingProtocols)
+	}
+}
+
 func TestResponseControllerCanFlushUnderlyingWriter(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	w := NewResponseWrapper(recorder)

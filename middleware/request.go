@@ -33,23 +33,17 @@ func AppendRequestBody(str string) func(http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				// TODO: handle read error
+				http.Error(w, "unable to read request body", http.StatusBadRequest)
+				return
 			}
 
 			body = append(body, []byte(str)...)
 			bodyBuffer := bytes.NewReader(body)
-			_, err = bodyBuffer.Seek(0, 0)
-			if err != nil {
-				// TODO: handle seek error
-			}
 
 			// this is probably not the correct way to handle chunked requests
 			r.ContentLength = bodyBuffer.Size()
 
-			err = r.Body.Close()
-			if err != nil {
-				// TODO: handle Close error
-			}
+			_ = r.Body.Close()
 			r.Body = io.NopCloser(bodyBuffer)
 			next.ServeHTTP(w, r)
 		}
@@ -61,18 +55,17 @@ func AppendRequestBody(str string) func(http.Handler) http.Handler {
 func PrependRequest(str string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			body := []byte(str)
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, "unable to read request body", http.StatusBadRequest)
+				return
+			}
+
+			body = append([]byte(str), body...)
 			bodyBuffer := bytes.NewBuffer(body)
+			r.ContentLength = int64(bodyBuffer.Len())
 
-			_, err := r.Body.Read(body)
-			if err != nil {
-				// TODO: handle read error
-			}
-
-			err = r.Body.Close()
-			if err != nil {
-				// TODO: handle Close error
-			}
+			_ = r.Body.Close()
 			r.Body = io.NopCloser(bodyBuffer)
 			next.ServeHTTP(w, r)
 		}

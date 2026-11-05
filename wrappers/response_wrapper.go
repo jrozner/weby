@@ -21,8 +21,9 @@ type ResponseWrapper struct {
 func (w *ResponseWrapper) WriteHeader(status int) {
 	w.ResponseWriter.WriteHeader(status)
 
-	// Informational responses do not commit the final response status.
-	if status >= 100 && status <= 199 {
+	// Informational responses do not commit the final response status. A 101
+	// response is final because the connection switches protocols immediately.
+	if status >= 100 && status <= 199 && status != http.StatusSwitchingProtocols {
 		return
 	}
 	if !w.wroteHeader {

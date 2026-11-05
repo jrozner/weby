@@ -2,6 +2,7 @@ package template
 
 import (
 	"html/template"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
@@ -121,6 +122,42 @@ func TestGenerateTemplatesMalformedLayoutReturnsError(t *testing.T) {
 	if _, err := GenerateTemplates(dir); err == nil {
 		t.Fatal("GenerateTemplates returned nil error for malformed layout")
 	}
+}
+
+func TestRenderMissingTemplateDoesNotCommitResponse(t *testing.T) {
+	tmpl := template.Must(template.New("root").Parse(`{{define "present"}}present{{end}}`))
+	templates := map[string]*template.Template{"page": tmpl}
+	w := newCommitTrackingWriter()
+
+	err := Render(w, http.StatusCreated, templates, "page", "missing", nil)
+	if err != ErrNoTemplate {
+		t.Fatalf("Render error = %v, want %v", err, ErrNoTemplate)
+	}
+	if w.committed {
+		t.Fatal("Render committed the response for a missing template")
+	}
+}
+
+type commitTrackingWriter struct {
+	header    http.Header
+	committed bool
+}
+
+func newCommitTrackingWriter() *commitTrackingWriter {
+	return &commitTrackingWriter{header: make(http.Header)}
+}
+
+func (w *commitTrackingWriter) Header() http.Header {
+	return w.header
+}
+
+func (w *commitTrackingWriter) Write(p []byte) (int, error) {
+	w.committed = true
+	return len(p), nil
+}
+
+func (w *commitTrackingWriter) WriteHeader(int) {
+	w.committed = true
 }
 
 func keysOf(m map[string]*template.Template) []string {

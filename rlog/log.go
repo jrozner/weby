@@ -3,6 +3,7 @@ package rlog
 import (
 	"context"
 	"log/slog"
+	"slices"
 
 	"github.com/jrozner/weby/middleware"
 )
@@ -37,8 +38,9 @@ func (h RequestIDHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	if d, ok := h.Handler.(*derivedHandler); ok && d.grouped {
 		// Attributes added to r would land inside the open groups, so
-		// apply the ID to the base handler before replaying the groups.
-		return d.replay(d.base.WithAttrs([]slog.Attr{slog.String("id", id)})).Handle(ctx, r)
+		// replay the top-level attributes, apply the ID, and then replay
+		// the groups.
+		return d.replayWithID(id).Handle(ctx, r)
 	}
 
 	r.Add("id", id)
@@ -80,7 +82,9 @@ func (o op) apply(h slog.Handler) slog.Handler {
 	if o.group != "" {
 		return h.WithGroup(o.group)
 	}
-	return h.WithAttrs(o.attrs)
+	// WithAttrs takes ownership of its argument, while the derived handler
+	// needs to retain these attributes for future replays.
+	return h.WithAttrs(slices.Clone(o.attrs))
 }
 
 // derivedHandler records the WithAttrs and WithGroup calls made on top of a
@@ -103,9 +107,18 @@ func (d *derivedHandler) with(o op) *derivedHandler {
 	}
 }
 
-func (d *derivedHandler) replay(h slog.Handler) slog.Handler {
+func (d *derivedHandler) replayWithID(id string) slog.Handler {
+	h := d.base
+	idApplied := false
 	for _, o := range d.ops {
+		if !idApplied && o.group != "" {
+			h = h.WithAttrs([]slog.Attr{slog.String("id", id)})
+			idApplied = true
+		}
 		h = o.apply(h)
+	}
+	if !idApplied {
+		h = h.WithAttrs([]slog.Attr{slog.String("id", id)})
 	}
 	return h
 }

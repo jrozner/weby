@@ -157,6 +157,47 @@ func TestRequestIDHandlerDerivedDoesNotModifyParent(t *testing.T) {
 	}
 }
 
+type consumingHandler struct {
+	slog.Handler
+}
+
+func (h consumingHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	owned := append([]slog.Attr(nil), attrs...)
+	next := h.Handler.WithAttrs(owned)
+	clear(attrs)
+	return consumingHandler{next}
+}
+
+func (h consumingHandler) WithGroup(name string) slog.Handler {
+	return consumingHandler{h.Handler.WithGroup(name)}
+}
+
+func TestRequestIDHandlerRetainsOwnedAttrs(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middleware.RequestIDKey, testID)
+
+	var buf bytes.Buffer
+	h := RequestIDHandler{consumingHandler{slog.NewJSONHandler(&buf, nil)}}
+	logger := slog.New(h).With("a", "b").WithGroup("g")
+	logger.InfoContext(ctx, "hello", "k", "v")
+
+	got := decode(t, &buf)
+	if got["a"] != "b" {
+		t.Fatalf("a = %v, want b; log = %v", got["a"], got)
+	}
+}
+
+func TestRequestIDHandlerIDPrecedence(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middleware.RequestIDKey, testID)
+
+	var buf bytes.Buffer
+	logger := newTestLogger(&buf).With("id", "static").WithGroup("g")
+	logger.InfoContext(ctx, "hello", "k", "v")
+
+	if got := decode(t, &buf)["id"]; got != testID {
+		t.Fatalf("id = %v, want %q", got, testID)
+	}
+}
+
 func TestRequestIDHandlerEnabled(t *testing.T) {
 	var buf bytes.Buffer
 	h := slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn})

@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/jrozner/weby/contextvalue"
 )
 
@@ -13,11 +12,7 @@ const RequestIDKey contextvalue.Key = "RequestID"
 
 func RequestID(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		requestID, err := uuid.NewUUID()
-		if err != nil {
-			slog.ErrorContext(r.Context(), "unable to generate request id", "error", err)
-		}
-
+		requestID := uuid.New()
 		ctx := context.WithValue(r.Context(), RequestIDKey, requestID.String())
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)

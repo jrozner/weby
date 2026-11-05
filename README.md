@@ -36,6 +36,22 @@ func root(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+`WrapResponse` must be registered before `Logger` so request logs can include
+the final response status. Handlers that need flushing, hijacking, deadlines,
+or full-duplex operation should pass the writer directly to
+`http.NewResponseController`:
+
+```go
+controller := http.NewResponseController(w)
+if err := controller.Flush(); err != nil {
+	// The underlying writer does not support flushing.
+}
+```
+
+Do not unwrap the response writer and call `Write` or `WriteHeader` on the
+underlying value. Those calls bypass response status tracking. Continue all
+normal response writes through the writer passed to the handler.
+
 ## License
 
 Weby is licensed under [MIT](LICENSE) though you probably shouldn't use it for your own projects.

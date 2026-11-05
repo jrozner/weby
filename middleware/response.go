@@ -18,35 +18,3 @@ func WrapResponse(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(fn)
 }
-
-func UpdateResponseHeader(header, value string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			wrapper, ok := w.(*wrappers.ResponseWrapper)
-			if !ok {
-				next.ServeHTTP(w, r)
-			} else {
-				next.ServeHTTP(wrapper, r)
-				wrapper.Header().Set(header, value)
-			}
-		}
-
-		return http.HandlerFunc(fn)
-	}
-}
-
-func RemoveResponseHeader(header string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			wrapper, ok := w.(*wrappers.ResponseWrapper)
-			if !ok {
-				next.ServeHTTP(w, r)
-			} else {
-				next.ServeHTTP(wrapper, r)
-				wrapper.Header().Del(header)
-			}
-		}
-
-		return http.HandlerFunc(fn)
-	}
-}

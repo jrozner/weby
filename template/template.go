@@ -34,9 +34,12 @@ func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[str
 	for _, f := range funcs {
 		base = base.Funcs(f)
 	}
-	base = template.Must(base.ParseGlob(path.Join(templatesPath, "_layouts", "*.html")))
+	base, err := base.ParseGlob(path.Join(templatesPath, "_layouts", "*.html"))
+	if err != nil {
+		return nil, err
+	}
 
-	err := fs.WalkDir(os.DirFS(templatesPath), ".", func(p string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(os.DirFS(templatesPath), ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

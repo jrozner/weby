@@ -79,6 +79,23 @@ func TestResponseControllerCanFlushUnderlyingWriter(t *testing.T) {
 	}
 }
 
+func TestResponseControllerFlushCommitsTrackedOK(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	w := NewResponseWrapper(recorder)
+
+	if err := http.NewResponseController(w).Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+
+	if got := w.Status(); got != http.StatusOK {
+		t.Errorf("Status() after flush and WriteHeader = %d, want %d", got, http.StatusOK)
+	}
+	if got := recorder.Code; got != http.StatusOK {
+		t.Errorf("committed status = %d, want %d", got, http.StatusOK)
+	}
+}
+
 func TestUnwrapReturnsUnderlyingWriter(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	w := NewResponseWrapper(recorder)

@@ -4,6 +4,14 @@ import (
 	"net/http"
 )
 
+// ResponseWrapper records the final HTTP response status while forwarding
+// headers and body writes to an underlying http.ResponseWriter.
+//
+// Handlers must continue to call Header, WriteHeader, and Write on the wrapper
+// so it can observe the response. To use advanced response operations, pass the
+// wrapper itself to http.NewResponseController. Do not call Unwrap and then
+// write through the returned writer, because those writes bypass status
+// tracking.
 type ResponseWrapper struct {
 	status      int
 	wroteHeader bool
@@ -43,9 +51,27 @@ func (w *ResponseWrapper) Status() int {
 	return w.status
 }
 
+// FlushError flushes the underlying ResponseWriter through
+// http.ResponseController and records the implicit 200 OK committed by a
+// successful flush. ResponseController prefers this method over Unwrap, which
+// keeps status tracking accurate if WriteHeader is called after a flush.
+func (w *ResponseWrapper) FlushError() error {
+	if err := http.NewResponseController(w.ResponseWriter).Flush(); err != nil {
+		return err
+	}
+	if !w.wroteHeader {
+		w.status = http.StatusOK
+		w.wroteHeader = true
+	}
+	return nil
+}
+
 // Unwrap returns the underlying ResponseWriter so http.ResponseController can
 // access optional capabilities such as flushing, hijacking, deadlines, and
-// full-duplex operation.
+// full-duplex operation. Callers should pass the wrapper directly to
+// http.NewResponseController rather than calling Unwrap themselves. Normal
+// response writes made through the unwrapped writer cannot be observed by the
+// wrapper and will make Status inaccurate.
 func (w *ResponseWrapper) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
 }

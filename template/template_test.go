@@ -103,6 +103,27 @@ func TestGenerateTemplatesNoFuncs(t *testing.T) {
 	}
 }
 
+func TestGenerateTemplatesIgnoresNonHTMLFiles(t *testing.T) {
+	dir := writeTree(t)
+	ignored := path.Join(dir, "pages", "README.md")
+	if err := os.WriteFile(ignored, []byte(`{{malformed`), 0o644); err != nil {
+		t.Fatalf("write non-template file: %v", err)
+	}
+
+	templates, err := GenerateTemplates(dir, template.FuncMap{
+		"humanize": func(s string) string { return s },
+	})
+	if err != nil {
+		t.Fatalf("GenerateTemplates: %v", err)
+	}
+	if _, ok := templates["pages/README.md"]; ok {
+		t.Fatal("GenerateTemplates included a non-HTML file")
+	}
+	if _, ok := templates["pages/index.html"]; !ok {
+		t.Fatal("GenerateTemplates omitted an HTML template")
+	}
+}
+
 func TestGenerateTemplatesMissingLayoutsReturnsError(t *testing.T) {
 	if _, err := GenerateTemplates(t.TempDir()); err == nil {
 		t.Fatal("GenerateTemplates returned nil error for missing layouts")

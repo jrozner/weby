@@ -48,6 +48,9 @@ func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[str
 		if d.IsDir() {
 			return nil
 		}
+		if filepath.Ext(p) != ".html" {
+			return nil
+		}
 
 		if strings.HasPrefix(p, "_") {
 			return nil

@@ -52,6 +52,13 @@ func (w *ResponseWrapper) Status() int {
 	return w.status
 }
 
+// Committed reports whether the wrapper has observed a final response status.
+// Writes made directly through the unwrapped ResponseWriter bypass tracking and
+// cannot be reported here.
+func (w *ResponseWrapper) Committed() bool {
+	return w.wroteHeader
+}
+
 // FlushError flushes the underlying ResponseWriter through
 // http.ResponseController and records the implicit 200 OK committed by a
 // successful flush. ResponseController prefers this method over Unwrap, which

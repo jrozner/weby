@@ -17,11 +17,27 @@ func Logger(l *slog.Logger) func(next http.Handler) http.Handler {
 			if !ok {
 				l.Error("unable to assert ResponseWriter to ResponseWrapper")
 				next.ServeHTTP(w, r)
-			} else {
-				next.ServeHTTP(wrapper, r)
-				end := time.Now()
-				l.InfoContext(r.Context(), "http request", "status", wrapper.Status(), "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", end.Sub(start))
+				return
 			}
+
+			completed := false
+			defer func() {
+				attrs := []any{"remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", time.Since(start)}
+				if !completed {
+					attrs = append(attrs, "outcome", "panicked")
+					if wrapper.Committed() {
+						attrs = append(attrs, "status", wrapper.Status())
+					}
+					l.ErrorContext(r.Context(), "http request", attrs...)
+					return
+				}
+
+				attrs = append(attrs, "status", wrapper.Status())
+				l.InfoContext(r.Context(), "http request", attrs...)
+			}()
+
+			next.ServeHTTP(wrapper, r)
+			completed = true
 		}
 
 		return http.HandlerFunc(fn)

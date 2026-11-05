@@ -55,6 +55,9 @@ func TestUntouchedResponseDefaultsToOK(t *testing.T) {
 	if got := w.Status(); got != http.StatusOK {
 		t.Errorf("Status() = %d, want %d", got, http.StatusOK)
 	}
+	if w.Committed() {
+		t.Error("Committed() = true, want false")
+	}
 }
 
 func TestInformationalHeaderDoesNotSetFinalStatus(t *testing.T) {
@@ -74,6 +77,9 @@ func TestSwitchingProtocolsSetsFinalStatus(t *testing.T) {
 
 	if got := w.Status(); got != http.StatusSwitchingProtocols {
 		t.Errorf("Status() = %d, want %d", got, http.StatusSwitchingProtocols)
+	}
+	if !w.Committed() {
+		t.Error("Committed() = false, want true")
 	}
 }
 

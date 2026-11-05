@@ -103,6 +103,27 @@ func TestGenerateTemplatesNoFuncs(t *testing.T) {
 	}
 }
 
+func TestGenerateTemplatesMissingLayoutsReturnsError(t *testing.T) {
+	if _, err := GenerateTemplates(t.TempDir()); err == nil {
+		t.Fatal("GenerateTemplates returned nil error for missing layouts")
+	}
+}
+
+func TestGenerateTemplatesMalformedLayoutReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	layouts := path.Join(dir, "_layouts")
+	if err := os.MkdirAll(layouts, 0o755); err != nil {
+		t.Fatalf("mkdir layouts: %v", err)
+	}
+	if err := os.WriteFile(path.Join(layouts, "base.html"), []byte(`{{define "base"}}`), 0o644); err != nil {
+		t.Fatalf("write malformed layout: %v", err)
+	}
+
+	if _, err := GenerateTemplates(dir); err == nil {
+		t.Fatal("GenerateTemplates returned nil error for malformed layout")
+	}
+}
+
 func TestRenderMissingTemplateDoesNotCommitResponse(t *testing.T) {
 	tmpl := template.Must(template.New("root").Parse(`{{define "present"}}present{{end}}`))
 	templates := map[string]*template.Template{"page": tmpl}

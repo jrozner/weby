@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 	"testing/slogtest"
+	"time"
 
 	"github.com/jrozner/weby/middleware"
 )
@@ -196,6 +197,29 @@ func TestRequestIDHandlerIDPrecedence(t *testing.T) {
 	if got := decode(t, &buf)["id"]; got != testID {
 		t.Fatalf("id = %v, want %q", got, testID)
 	}
+}
+
+func TestRequestIDHandlerDoesNotModifySharedRecord(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middleware.RequestIDKey, testID)
+
+	var buf bytes.Buffer
+	h := RequestIDHandler{slog.NewJSONHandler(&buf, nil)}
+	r := slog.NewRecord(time.Time{}, slog.LevelInfo, "hello", 0)
+	for i := range 8 {
+		r.AddAttrs(slog.Int("attr", i))
+	}
+
+	if err := h.Handle(ctx, r); err != nil {
+		t.Fatalf("Handle: %v", err)
+	}
+	r.AddAttrs(slog.String("after", "value"))
+
+	r.Attrs(func(a slog.Attr) bool {
+		if a.Key == "!BUG" {
+			t.Fatalf("handler modified shared record state: %v", a)
+		}
+		return true
+	})
 }
 
 func TestRequestIDHandlerEnabled(t *testing.T) {

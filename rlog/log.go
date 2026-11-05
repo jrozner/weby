@@ -43,6 +43,7 @@ func (h RequestIDHandler) Handle(ctx context.Context, r slog.Record) error {
 		return d.replayWithID(id).Handle(ctx, r)
 	}
 
+	r = r.Clone()
 	r.Add("id", id)
 	return h.Handler.Handle(ctx, r)
 }

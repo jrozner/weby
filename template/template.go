@@ -72,7 +72,9 @@ func GenerateTemplates(templatesPath string, funcs ...template.FuncMap) (map[str
 	return templates, err
 }
 
-// Render finds the specified template in the map of templates, executes it, and writes it to the writer.
+// Render finds the specified template in the map of templates, executes it,
+// and streams it to the writer. If template execution fails after output has
+// begun, the status and a partial response may already have been written.
 func Render(w http.ResponseWriter, status int, templates map[string]*template.Template, ns, name string, data any) error {
 	t, ok := templates[ns]
 	if !ok {
@@ -80,6 +82,9 @@ func Render(w http.ResponseWriter, status int, templates map[string]*template.Te
 	}
 
 	name = path.Base(name)
+	if t.Lookup(name) == nil {
+		return ErrNoTemplate
+	}
 
 	w.WriteHeader(status)
 	return t.ExecuteTemplate(w, name, data)

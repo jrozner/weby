@@ -22,17 +22,17 @@ func Logger(l *slog.Logger) func(next http.Handler) http.Handler {
 
 			completed := false
 			defer func() {
-				attrs := []any{"remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", time.Since(start)}
+				attrs := make([]any, 0, 12)
+				if completed || wrapper.Committed() {
+					attrs = append(attrs, "status", wrapper.Status())
+				}
+				attrs = append(attrs, "remote", r.RemoteAddr, "method", r.Method, "path", r.URL.Path, "duration", time.Since(start))
 				if !completed {
 					attrs = append(attrs, "outcome", "panicked")
-					if wrapper.Committed() {
-						attrs = append(attrs, "status", wrapper.Status())
-					}
 					l.ErrorContext(r.Context(), "http request", attrs...)
 					return
 				}
 
-				attrs = append(attrs, "status", wrapper.Status())
 				l.InfoContext(r.Context(), "http request", attrs...)
 			}()
 

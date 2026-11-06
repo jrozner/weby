@@ -54,8 +54,11 @@ func TestLoggerIncludesCommittedStatusWhenHandlerPanics(t *testing.T) {
 	_ = recoveredPanic(func() { handler.ServeHTTP(w, r) })
 
 	entry := logs.String()
-	if !strings.Contains(entry, `outcome=panicked status=202`) {
-		t.Errorf("panic log missing committed status: %s", entry)
+	if !strings.Contains(entry, `status=202`) || !strings.Contains(entry, `outcome=panicked`) {
+		t.Errorf("panic log missing committed status or outcome: %s", entry)
+	}
+	if status, remote := strings.Index(entry, `status=202`), strings.Index(entry, `remote=`); status < 0 || remote < 0 || status > remote {
+		t.Errorf("panic log does not place status before request fields: %s", entry)
 	}
 }
 
@@ -79,6 +82,9 @@ func TestLoggerLogsCompletedRequest(t *testing.T) {
 	}
 	if !strings.Contains(entry, `status=204`) {
 		t.Errorf("request log missing status: %s", entry)
+	}
+	if status, remote := strings.Index(entry, `status=204`), strings.Index(entry, `remote=`); status < 0 || remote < 0 || status > remote {
+		t.Errorf("request log does not place status before request fields: %s", entry)
 	}
 	if strings.Contains(entry, `outcome=panicked`) {
 		t.Errorf("completed request logged as panicked: %s", entry)
